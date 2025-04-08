@@ -1,19 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { db } from '../firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import Sidebar from '../components/Sidebar';
 import TopNav from '../components/TopNav';
 
 const Profile = () => {
     const [editMode, setEditMode] = useState(false);
     const [formData, setFormData] = useState({
-        name: "Alex Johnson",
-        email: "alex.j@university.edu",
-        phone: "+1 (555) 123-4567",
-        university: "State University",
-        graduationYear: "2024",
-        major: "Computer Science",
-        skills: ["JavaScript", "React", "Python", "Data Analysis"],
-        bio: "Passionate CS student with focus on web development and AI. Looking for mentorship opportunities."
+        name: "",
+        email: "",
+        phone: "",
+        university: "",
+        graduationYear: "",
+        major: "",
+        skills: [],
+        bio: "",
+        role: "student"
     });
+
+    // Hardcoded user ID for demo (replace with your actual user ID)
+    const userId = "demo_user_id";
+
+    // Fetch user data from Firebase
+    useEffect(() => {
+        const fetchData = async () => {
+            const docRef = doc(db, "users", userId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                setFormData(docSnap.data());
+            }
+        };
+        fetchData();
+    }, [userId]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -34,6 +52,17 @@ const Profile = () => {
         setFormData(prev => ({ ...prev, skills: prev.skills.filter((_, i) => i !== index) }));
     };
 
+    const saveProfile = async () => {
+        try {
+            await updateDoc(doc(db, "users", userId), formData);
+            setEditMode(false);
+            alert("Profile updated successfully!");
+        } catch (error) {
+            console.error("Error updating profile: ", error);
+            alert("Error updating profile. Please try again.");
+        }
+    };
+
     return (
         <div className="dashboard-container">
             <Sidebar />
@@ -44,7 +73,7 @@ const Profile = () => {
                         <h1>My Profile</h1>
                         <button
                             className={`edit-btn ${editMode ? 'save-btn' : ''}`}
-                            onClick={() => setEditMode(!editMode)}
+                            onClick={editMode ? saveProfile : () => setEditMode(true)}
                         >
                             {editMode ? 'Save Profile' : 'Edit Profile'}
                         </button>
@@ -91,7 +120,7 @@ const Profile = () => {
                                         onChange={handleChange}
                                     />
                                 ) : (
-                                    <p>{formData.phone}</p>
+                                    <p>{formData.phone || "Not provided"}</p>
                                 )}
                             </div>
                         </div>
@@ -108,7 +137,7 @@ const Profile = () => {
                                         onChange={handleChange}
                                     />
                                 ) : (
-                                    <p>{formData.university}</p>
+                                    <p>{formData.university || "Not provided"}</p>
                                 )}
                             </div>
 
@@ -122,7 +151,7 @@ const Profile = () => {
                                         onChange={handleChange}
                                     />
                                 ) : (
-                                    <p>{formData.major}</p>
+                                    <p>{formData.major || "Not provided"}</p>
                                 )}
                             </div>
 
@@ -136,7 +165,7 @@ const Profile = () => {
                                         onChange={handleChange}
                                     />
                                 ) : (
-                                    <p>{formData.graduationYear}</p>
+                                    <p>{formData.graduationYear || "Not provided"}</p>
                                 )}
                             </div>
                         </div>
@@ -166,9 +195,13 @@ const Profile = () => {
                                 </div>
                             ) : (
                                 <div className="skills-display">
-                                    {formData.skills.map((skill, index) => (
-                                        <span key={index} className="skill-tag">{skill}</span>
-                                    ))}
+                                    {formData.skills.length > 0 ? (
+                                        formData.skills.map((skill, index) => (
+                                            <span key={index} className="skill-tag">{skill}</span>
+                                        ))
+                                    ) : (
+                                        <p>No skills added yet</p>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -183,7 +216,7 @@ const Profile = () => {
                                     rows="4"
                                 />
                             ) : (
-                                <p className="bio-text">{formData.bio}</p>
+                                <p className="bio-text">{formData.bio || "No bio provided"}</p>
                             )}
                         </div>
                     </div>
@@ -194,5 +227,3 @@ const Profile = () => {
 };
 
 export default Profile;
-
-

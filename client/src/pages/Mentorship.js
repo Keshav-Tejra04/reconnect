@@ -1,58 +1,63 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { db } from '../firebase';
+import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import Sidebar from '../components/Sidebar';
 import TopNav from '../components/TopNav';
 
 const Mentorship = () => {
-    const mentors = [
-        {
-            name: "Fram Sharma",
-            expertise: "Machine Learning",
-            company: "Google",
-            experience: "5+ years",
-            rating: "4.9",
-            sessions: "42"
-        },
-        {
-            name: "harsh jain",
-            expertise: "Web Development",
-            company: "Microsoft",
-            experience: "3 years",
-            rating: "4.7",
-            sessions: "28"
-        },
-        {
-            name: "radhe gupta",
-            expertise: "Data Science",
-            company: "Amazon",
-            experience: "4 years",
-            rating: "4.8",
-            sessions: "35"
-        },
-        {
-            name: "keshav vangdu",
-            expertise: "Cybersecurity",
-            company: "IBM",
-            experience: "6+ years",
-            rating: "4.9",
-            sessions: "51"
-        },
-        {
-            name: "vikas dhakad",
-            expertise: "AI Research",
-            company: "Tesla",
-            experience: "7+ years",
-            rating: "5.0",
-            sessions: "63"
-        },
-        {
-            name: "rashmika mandana",
-            expertise: "Cloud Computing",
-            company: "Google",
-            experience: "4 years",
-            rating: "4.7",
-            sessions: "29"
-        }
-    ];
+    const [mentors, setMentors] = useState([]);
+    const [filters, setFilters] = useState({
+        name: '',
+        expertise: '',
+        company: ''
+    });
+
+    // Fetch mentors from Firebase
+    useEffect(() => {
+        const fetchMentors = async () => {
+            // Start with base query for alumni
+            let q = query(
+                collection(db, "users"),
+                where("role", "==", "alumni")
+            );
+
+            // Apply filters if they exist
+            if (filters.name) {
+                q = query(q, where("name", ">=", filters.name), where("name", "<=", filters.name + '\uf8ff'));
+            }
+            if (filters.expertise) {
+                q = query(q, where("skills", "array-contains", filters.expertise));
+            }
+            if (filters.company) {
+                q = query(q, where("company", "==", filters.company));
+            }
+
+            // Order by experience (descending)
+            // q = query(q, orderBy("experience"    ));
+
+            const querySnapshot = await getDocs(q);
+            const mentorsData = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setMentors(mentorsData);
+        };
+
+        fetchMentors();
+    }, [filters]);
+
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleConnect = (mentorId) => {
+        console.log("Connect with mentor:", mentorId);
+        // Will implement actual connection later
+    };
 
     return (
         <div className="dashboard-container">
@@ -61,23 +66,49 @@ const Mentorship = () => {
                 <TopNav />
                 <div className="standard-page">
                     <div className="filters">
-                        <input type="text" placeholder="Search by name..." className="filter-input" />
-                        <input type="text" placeholder="Search by expertise..." className="filter-input" />
-                        <input type="text" placeholder="Search by company..." className="filter-input" />
+                        <input
+                            type="text"
+                            name="name"
+                            placeholder="Search by name..."
+                            className="filter-input"
+                            value={filters.name}
+                            onChange={handleFilterChange}
+                        />
+                        <input
+                            type="text"
+                            name="expertise"
+                            placeholder="Search by expertise..."
+                            className="filter-input"
+                            value={filters.expertise}
+                            onChange={handleFilterChange}
+                        />
+                        <input
+                            type="text"
+                            name="company"
+                            placeholder="Search by company..."
+                            className="filter-input"
+                            value={filters.company}
+                            onChange={handleFilterChange}
+                        />
                     </div>
 
                     <div className="card-grid">
-                        {mentors.map((mentor, index) => (
-                            <div key={index} className="standard-card">
+                        {mentors.map((mentor) => (
+                            <div key={mentor.id} className="standard-card">
                                 <h3>{mentor.name}</h3>
                                 <div className="card-details">
-                                    <p><strong>Expertise:</strong> {mentor.expertise}</p>
+                                    {/* <p><strong>Expertise:</strong> {mentor.skills?.join(', ')}</p> */}
                                     <p><strong>Company:</strong> {mentor.company}</p>
-                                    <p><strong>Experience:</strong> {mentor.experience}</p>
+                                    <p><strong>Experience:</strong> {mentor.experience} years</p>
                                     <p><strong>Rating:</strong> ⭐ {mentor.rating} ({mentor.sessions} sessions)</p>
                                 </div>
                                 <div className="card-actions">
-                                    <button className="primary-btn">Connect</button>
+                                    <button
+                                        className="primary-btn"
+                                        onClick={() => handleConnect(mentor.id)}
+                                    >
+                                        Connect
+                                    </button>
                                     <button className="secondary-btn">Message</button>
                                 </div>
                             </div>

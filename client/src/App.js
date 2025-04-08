@@ -8,6 +8,7 @@ import Resources from './pages/Resources';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import './styles/main.css';
+import Resume from './pages/Resume';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/resources" element={<Resources />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/resume" element={<Resume />} />
       </Routes>
     </Router>
   );

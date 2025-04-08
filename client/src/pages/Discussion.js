@@ -1,59 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { db } from '../firebase';
+import { collection, getDocs, addDoc, updateDoc, doc, query, orderBy, where } from 'firebase/firestore';
 import Sidebar from '../components/Sidebar';
 import TopNav from '../components/TopNav';
+import { increment } from 'firebase/firestore';
+
 
 const Discussion = () => {
     const [activeTab, setActiveTab] = useState('general');
     const [searchQuery, setSearchQuery] = useState('');
-
-    // Sample discussion data with state for votes
-    const [discussions, setDiscussions] = useState({
-        general: [
-            {
-                id: 1,
-                title: "Welcome to our Discussion Forum!",
-                author: "Admin",
-                upvotes: 125,
-                comments: 42,
-                timestamp: "1 day ago",
-                tags: ["#Welcome", "#Guidelines"]
-            }
-        ],
-        hot: [
-            {
-                id: 2,
-                title: "What skills are most valuable for Data Science roles?",
-                author: "DataEnthusiast",
-                upvotes: 142,
-                comments: 38,
-                timestamp: "2 hours ago",
-                tags: ["#DataScience", "#CareerAdvice"]
-            }
-        ],
-        new: [
-            {
-                id: 3,
-                title: "Just landed my first internship at Google! AMA",
-                author: "NewGrad2023",
-                upvotes: 87,
-                comments: 24,
-                timestamp: "15 minutes ago",
-                tags: ["#Internship", "#Google"]
-            }
-        ],
-        top: [
-            {
-                id: 4,
-                title: "Complete roadmap to become a Full Stack Developer",
-                author: "TechGuide",
-                upvotes: 356,
-                comments: 92,
-                timestamp: "1 week ago",
-                tags: ["#WebDevelopment", "#Roadmap"]
-            }
-        ]
-    });
-
+    const [discussions, setDiscussions] = useState([]);
     const [userVotes, setUserVotes] = useState({});
     const [showNewPostModal, setShowNewPostModal] = useState(false);
     const [newPost, setNewPost] = useState({
@@ -63,69 +19,74 @@ const Discussion = () => {
         category: 'general'
     });
 
-    const handleVote = (discussionId, voteType) => {
-        setDiscussions(prevDiscussions => {
-            const updatedDiscussions = { ...prevDiscussions };
-
-            // Find which category contains this discussion
-            const category = Object.keys(updatedDiscussions).find(key =>
-                updatedDiscussions[key].some(d => d.id === discussionId)
-            );
-
-            if (category) {
-                const discussionIndex = updatedDiscussions[category].findIndex(d => d.id === discussionId);
-                const currentVote = userVotes[discussionId];
-
-                // Calculate vote change
-                let voteChange = 0;
-                if (currentVote === voteType) {
-                    // Clicking same vote again removes it
-                    voteChange = voteType === 'up' ? -1 : 1;
-                    setUserVotes(prev => {
-                        const newVotes = { ...prev };
-                        delete newVotes[discussionId];
-                        return newVotes;
-                    });
-                } else if (currentVote) {
-                    // Changing vote (e.g., from up to down)
-                    voteChange = voteType === 'up' ? 2 : -2;
-                    setUserVotes(prev => ({ ...prev, [discussionId]: voteType }));
-                } else {
-                    // New vote
-                    voteChange = voteType === 'up' ? 1 : -1;
-                    setUserVotes(prev => ({ ...prev, [discussionId]: voteType }));
-                }
-
-                // Update the upvotes count
-                updatedDiscussions[category][discussionIndex].upvotes += voteChange;
+    // Fetch discussions from Firebase
+    useEffect(() => {
+        const fetchDiscussions = async () => {
+            let q;
+            if (activeTab === 'hot') {
+                q = query(collection(db, "discussions"), orderBy("upvotes", "desc"));
+            } else if (activeTab === 'new') {
+                q = query(collection(db, "discussions"), orderBy("timestamp", "desc"));
+            } else if (activeTab === 'top') {
+                q = query(collection(db, "discussions"), orderBy("upvotes", "desc"));
+            } else {
+                q = query(collection(db, "discussions"), where("category", "==", activeTab));
             }
 
-            return updatedDiscussions;
+            const querySnapshot = await getDocs(q);
+            const discussionsData = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setDiscussions(discussionsData);
+        };
+
+        fetchDiscussions();
+    }, [activeTab]);
+
+    const handleVote = async (discussionId, voteType) => {
+        const discussionRef = doc(db, "discussions", discussionId);
+        const currentVote = userVotes[discussionId];
+        let voteChange = 0;
+
+        if (currentVote === voteType) {
+            voteChange = voteType === 'up' ? -1 : 1;
+            setUserVotes(prev => {
+                const newVotes = { ...prev };
+                delete newVotes[discussionId];
+                return newVotes;
+            });
+        } else if (currentVote) {
+            voteChange = voteType === 'up' ? 2 : -2;
+            setUserVotes(prev => ({ ...prev, [discussionId]: voteType }));
+        } else {
+            voteChange = voteType === 'up' ? 1 : -1;
+            setUserVotes(prev => ({ ...prev, [discussionId]: voteType }));
+        }
+
+        await updateDoc(discussionRef, {
+            upvotes: increment(voteChange)
         });
     };
 
-    const handleCreatePost = () => {
-        const newId = Math.max(...Object.values(discussions).flat().map(d => d.id)) + 1;
+    const handleCreatePost = async () => {
+        try {
+            await addDoc(collection(db, "discussions"), {
+                title: newPost.title,
+                content: newPost.content,
+                author: "CurrentUser", // Replace with actual user later
+                upvotes: 0,
+                comments: 0,
+                timestamp: new Date(),
+                tags: newPost.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+                category: newPost.category
+            });
 
-        setDiscussions(prev => {
-            const updated = { ...prev };
-            updated[newPost.category] = [
-                {
-                    id: newId,
-                    title: newPost.title,
-                    author: "CurrentUser", // Replace with actual user later
-                    upvotes: 0,
-                    comments: 0,
-                    timestamp: "Just now",
-                    tags: newPost.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
-                },
-                ...updated[newPost.category]
-            ];
-            return updated;
-        });
-
-        setShowNewPostModal(false);
-        setNewPost({ title: '', content: '', tags: '', category: 'general' });
+            setShowNewPostModal(false);
+            setNewPost({ title: '', content: '', tags: '', category: 'general' });
+        } catch (error) {
+            console.error("Error adding document: ", error);
+        }
     };
 
     const handleDiscussionTitleClick = (id) => {
@@ -190,7 +151,7 @@ const Discussion = () => {
                     </button>
 
                     <div className="discussions-list">
-                        {discussions[activeTab]
+                        {discussions
                             .filter(discussion =>
                                 discussion.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                 (discussion.tags && discussion.tags.some(tag =>
@@ -207,7 +168,7 @@ const Discussion = () => {
                                         </h3>
                                         <div className="meta">
                                             <span>Posted by u/{discussion.author}</span>
-                                            <span>{discussion.timestamp}</span>
+                                            <span>{new Date(discussion.timestamp?.toDate()).toLocaleString()}</span>
                                             <span>{discussion.comments} comments</span>
                                         </div>
                                         {discussion.tags && (

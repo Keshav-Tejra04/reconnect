@@ -1,52 +1,55 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { db } from '../firebase';
+import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import Sidebar from '../components/Sidebar';
 import TopNav from '../components/TopNav';
 
 const Jobs = () => {
-    const jobs = [
-        {
-            title: "Web Developer Intern",
-            company: "Unified Mentor Private Limited",
-            location: "India (Remote)",
-            type: "Internship",
-            salary: "$2,000 - $3,000/month"
-        },
-        {
-            title: "Frontend Developer",
-            company: "Meta Softer Technologies",
-            location: "India (Remote)",
-            type: "Full-time",
-            salary: "$45,000 - $60,000"
-        },
-        {
-            title: "Python Developer",
-            company: "TechGlobal Inc.",
-            location: "Delhi, India",
-            type: "Full-time",
-            salary: "$50,000 - $75,000"
-        },
-        {
-            title: "Software Engineer",
-            company: "Alumni Startup XYZ",
-            location: "Bangkok, India",
-            type: "Full-time",
-            salary: "€50,000 - €70,000"
-        },
-        {
-            title: "Data Science Intern",
-            company: "Data Insights Co.",
-            location: "Remote",
-            type: "Internship",
-            salary: "$3,000/month"
-        },
-        {
-            title: "Product Manager",
-            company: "Tech Solutions Inc.",
-            location: "Bangalore, India",
-            type: "Full-time",
-            salary: "₹15,00,000 - ₹20,00,000"
-        }
-    ];
+    const [jobs, setJobs] = useState([]);
+    const [filters, setFilters] = useState({
+        title: '',
+        company: '',
+        location: ''
+    });
+
+    // Fetch jobs from Firebase
+    useEffect(() => {
+        const fetchJobs = async () => {
+            let q = query(collection(db, "jobs"), orderBy("postedAt", "desc"));
+
+            if (filters.title) {
+                q = query(q, where("title", ">=", filters.title), where("title", "<=", filters.title + '\uf8ff'));
+            }
+            if (filters.company) {
+                q = query(q, where("company", "==", filters.company));
+            }
+            if (filters.location) {
+                q = query(q, where("location", "==", filters.location));
+            }
+
+            const querySnapshot = await getDocs(q);
+            const jobsData = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setJobs(jobsData);
+        };
+
+        fetchJobs();
+    }, [filters]);
+
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleApply = (jobId) => {
+        console.log("Applying for job:", jobId);
+        // Will implement actual application later
+    };
 
     return (
         <div className="dashboard-container">
@@ -55,14 +58,35 @@ const Jobs = () => {
                 <TopNav />
                 <div className="standard-page">
                     <div className="filters">
-                        <input type="text" placeholder="Job title..." className="filter-input" />
-                        <input type="text" placeholder="Company..." className="filter-input" />
-                        <input type="text" placeholder="Location..." className="filter-input" />
+                        <input
+                            type="text"
+                            name="title"
+                            placeholder="Job title..."
+                            className="filter-input"
+                            value={filters.title}
+                            onChange={handleFilterChange}
+                        />
+                        <input
+                            type="text"
+                            name="company"
+                            placeholder="Company..."
+                            className="filter-input"
+                            value={filters.company}
+                            onChange={handleFilterChange}
+                        />
+                        <input
+                            type="text"
+                            name="location"
+                            placeholder="Location..."
+                            className="filter-input"
+                            value={filters.location}
+                            onChange={handleFilterChange}
+                        />
                     </div>
 
                     <div className="card-grid">
-                        {jobs.map((job, index) => (
-                            <div key={index} className="standard-card">
+                        {jobs.map((job) => (
+                            <div key={job.id} className="standard-card">
                                 <div className="card-header">
                                     <h3>{job.title}</h3>
                                     <span className={`job-type ${job.type.toLowerCase()}`}>{job.type}</span>
@@ -71,9 +95,15 @@ const Jobs = () => {
                                     <p><strong>Company:</strong> {job.company}</p>
                                     <p><strong>Location:</strong> {job.location}</p>
                                     <p><strong>Salary:</strong> {job.salary}</p>
+                                    {job.deadline && <p><strong>Apply by:</strong> {new Date(job.deadline.toDate()).toLocaleDateString()}</p>}
                                 </div>
                                 <div className="card-actions">
-                                    <button className="primary-btn">Apply</button>
+                                    <button
+                                        className="primary-btn"
+                                        onClick={() => handleApply(job.id)}
+                                    >
+                                        Apply
+                                    </button>
                                     <button className="secondary-btn">Save</button>
                                 </div>
                             </div>

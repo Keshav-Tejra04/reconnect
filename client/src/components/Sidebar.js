@@ -11,7 +11,7 @@ const Sidebar = () => {
         { icon: '👨‍💻', label: 'Project Collaboration', path: '/collaboration' },
         { icon: '💼', label: 'Job Portal', path: '/jobs' },
         { icon: '📚', label: 'Resources Library', path: '/resources' },
-        { icon: '📝', label: 'Review', path: '/review' }
+        { icon: '📝', label: 'Resume', path: '/resume' }
     ];
 
     return (
