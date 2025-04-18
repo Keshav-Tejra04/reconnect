@@ -16,7 +16,6 @@ import {
 import '../styles/main.css';
 
 const Dashboard = () => {
-    // Sample data - replace with your actual data
     const quickActions = [
         {
             title: "Start Discussion",
@@ -79,7 +78,6 @@ const Dashboard = () => {
                         <p>Here's what's happening in your network</p>
                     </div>
 
-                    {/* Quick Stats Section */}
                     <div className="stats-grid">
                         <div className="stat-card">
                             <div className="stat-icon" style={{ background: '#4CAF50' }}>
@@ -126,9 +124,7 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    {/* Main Content Area */}
                     <div className="content-grid">
-                        {/* Quick Actions Section */}
                         <div className="dashboard-section quick-actions">
                             <h2>Quick Actions</h2>
                             <div className="actions-grid">
@@ -143,10 +139,8 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        {/* Recent Activity Section */}
                         
 
-                        {/* Recommended Mentors Section */}
                         
                     </div>
                 </div>

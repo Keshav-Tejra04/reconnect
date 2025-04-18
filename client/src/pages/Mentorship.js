@@ -12,16 +12,15 @@ const Mentorship = () => {
         company: ''
     });
 
-    // Fetch mentors from Firebase
     useEffect(() => {
         const fetchMentors = async () => {
-            // Start with base query for alumni
+            
             let q = query(
                 collection(db, "users"),
                 where("role", "==", "alumni")
             );
 
-            // Apply filters if they exist
+            
             if (filters.name) {
                 q = query(q, where("name", ">=", filters.name), where("name", "<=", filters.name + '\uf8ff'));
             }
@@ -56,7 +55,6 @@ const Mentorship = () => {
 
     const handleConnect = (mentorId) => {
         console.log("Connect with mentor:", mentorId);
-        // Will implement actual connection later
     };
 
     return (

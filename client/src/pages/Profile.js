@@ -18,10 +18,8 @@ const Profile = () => {
         role: "student"
     });
 
-    // Hardcoded user ID for demo (replace with your actual user ID)
     const userId = "demo_user_id";
 
-    // Fetch user data from Firebase
     useEffect(() => {
         const fetchData = async () => {
             const docRef = doc(db, "users", userId);

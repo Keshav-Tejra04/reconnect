@@ -48,7 +48,6 @@ const Jobs = () => {
 
     const handleApply = (jobId) => {
         console.log("Applying for job:", jobId);
-        // Will implement actual application later
     };
 
     return (

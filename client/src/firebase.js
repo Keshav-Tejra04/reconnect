@@ -24,18 +24,10 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
-// ==================== RESUME REVIEW SYSTEM ====================
 
-/**
- * Uploads a resume to Firebase Storage and creates/updates the resume document
- * @param {string} userId - The user's UID
- * @param {File} file - The resume file to upload
- * @param {string} studentName - The student's display name
- * @returns {Promise<string>} The download URL of the uploaded resume
- */
+
 export const uploadResume = async (userId, file, studentName) => {
     try {
-        // Delete previous resume if exists
         const prevResume = await getDoc(doc(db, "resumes", userId));
         if (prevResume.exists() && prevResume.data().url) {
             try {
@@ -46,7 +38,6 @@ export const uploadResume = async (userId, file, studentName) => {
             }
         }
 
-        // Upload new resume
         const storageRef = ref(storage, `resumes/${userId}/${file.name}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
 
@@ -74,21 +65,14 @@ export const uploadResume = async (userId, file, studentName) => {
     }
 };
 
-/**
- * Gets a user's resume data
- * @param {string} userId - The user's UID
- * @returns {Promise<Object|null>} The resume data or null if not found
- */
+
 export const getResume = async (userId) => {
     const docRef = doc(db, "resumes", userId);
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? docSnap.data() : null;
 };
 
-/**
- * Gets all resumes that need review
- * @returns {Promise<Array>} Array of resumes needing review
- */
+
 export const getPendingResumes = async () => {
     const q = query(
         collection(db, "resumes"),
@@ -99,17 +83,9 @@ export const getPendingResumes = async () => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-/**
- * Submits a review for a resume
- * @param {string} resumeId - The student's UID (same as resume document ID)
- * @param {string} reviewerId - The alumni's UID
- * @param {string} reviewerName - The alumni's display name
- * @param {string} feedback - The review feedback
- * @returns {Promise<string>} The ID of the created review
- */
+
 export const submitReview = async (resumeId, reviewerId, reviewerName, feedback) => {
     try {
-        // Add the review
         const reviewRef = await addDoc(collection(db, "reviews"), {
             resumeId,
             studentId: resumeId,
@@ -120,7 +96,6 @@ export const submitReview = async (resumeId, reviewerId, reviewerName, feedback)
             updatedAt: new Date()
         });
 
-        // Mark resume as reviewed
         await updateDoc(doc(db, "resumes", resumeId), {
             needsReview: false,
             lastReviewedAt: new Date()
@@ -133,11 +108,7 @@ export const submitReview = async (resumeId, reviewerId, reviewerName, feedback)
     }
 };
 
-/**
- * Gets all reviews for a specific student
- * @param {string} studentId - The student's UID
- * @returns {Promise<Array>} Array of reviews
- */
+
 export const getStudentReviews = async (studentId) => {
     const q = query(
         collection(db, "reviews"),
@@ -148,24 +119,13 @@ export const getStudentReviews = async (studentId) => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-/**
- * Real-time listener for resume updates
- * @param {string} userId - The user's UID
- * @param {Function} callback - Callback function when data changes
- * @returns {Function} Unsubscribe function
- */
+
 export const onResumeUpdate = (userId, callback) => {
     return onSnapshot(doc(db, "resumes", userId), (doc) => {
         callback(doc.exists() ? doc.data() : null);
     });
 };
 
-/**
- * Real-time listener for review updates
- * @param {string} studentId - The student's UID
- * @param {Function} callback - Callback function when data changes
- * @returns {Function} Unsubscribe function
- */
 export const onReviewsUpdate = (studentId, callback) => {
     const q = query(
         collection(db, "reviews"),
@@ -177,7 +137,6 @@ export const onReviewsUpdate = (studentId, callback) => {
     });
 };
 
-// ==================== EXISTING FUNCTIONS ====================
 
 export const addDiscussion = async (title, body, userId, userName) => {
     await addDoc(collection(db, "discussions"), {
@@ -216,24 +175,15 @@ export const fetchMentors = async () => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-// ==================== USER MANAGEMENT ====================
 
-/**
- * Gets user role (student/alumni)
- * @param {string} userId 
- * @returns {Promise<string|null>} The user's role or null if not found
- */
+
 export const getUserRole = async (userId) => {
     const docRef = doc(db, "users", userId);
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? docSnap.data().role : null;
 };
 
-/**
- * Real-time listener for user role changes
- * @param {Function} callback - Callback function when auth state changes
- * @returns {Function} Unsubscribe function
- */
+
 export const onUserRoleChange = (callback) => {
     return onAuthStateChanged(auth, async (user) => {
         if (user) {

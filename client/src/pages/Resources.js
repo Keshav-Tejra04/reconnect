@@ -9,7 +9,6 @@ const Resources = () => {
     const [resources, setResources] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Fetch resources from Firebase
     useEffect(() => {
         const fetchResources = async () => {
             setLoading(true);

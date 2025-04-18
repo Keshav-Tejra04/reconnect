@@ -19,7 +19,6 @@ const Discussion = () => {
         category: 'general'
     });
 
-    // Fetch discussions from Firebase
     useEffect(() => {
         const fetchDiscussions = async () => {
             let q;
@@ -74,7 +73,7 @@ const Discussion = () => {
             await addDoc(collection(db, "discussions"), {
                 title: newPost.title,
                 content: newPost.content,
-                author: "CurrentUser", // Replace with actual user later
+                author: "CurrentUser", 
                 upvotes: 0,
                 comments: 0,
                 timestamp: new Date(),
@@ -91,7 +90,6 @@ const Discussion = () => {
 
     const handleDiscussionTitleClick = (id) => {
         console.log("Discussion title clicked:", id);
-        // Will implement actual navigation later
     };
 
     return (

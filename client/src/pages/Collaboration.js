@@ -9,7 +9,6 @@ const Collaboration = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
 
-    // Fetch projects from Firebase
     useEffect(() => {
         const fetchProjects = async () => {
             setLoading(true);

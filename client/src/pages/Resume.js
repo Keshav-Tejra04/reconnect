@@ -32,7 +32,6 @@ const ResumeReview = () => {
     const [pendingReviews, setPendingReviews] = useState([]);
     const [feedback, setFeedback] = useState('');
 
-    // Check user role
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -46,7 +45,6 @@ const ResumeReview = () => {
         return () => unsubscribe();
     }, []);
 
-    // Load user's resume and reviews
     useEffect(() => {
         if (!isAlumni && auth.currentUser) {
             const unsubscribe = onSnapshot(
@@ -134,7 +132,6 @@ const ResumeReview = () => {
                 createdAt: new Date()
             });
 
-            // Mark as reviewed
             await updateDoc(doc(db, "resumes", resumeId), {
                 needsReview: false
             });
